@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExternalDataServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UCMS Certificate Management</a> &gt; <a href="index.source.html" class="el_package">com.newland.ucms.certificate.service.impl</a> &gt; <span class="el_source">ExternalDataServiceImpl.java</span></div><h1>ExternalDataServiceImpl.java</h1><pre class="source lang-java linenums">package com.newland.ucms.certificate.service.impl;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.newland.ucms.certificate.config.ExternalApiConfig;
+import com.newland.ucms.certificate.dto.BusinessChannelDTO;
+import com.newland.ucms.certificate.dto.ChannelSubTypeDTO;
+import com.newland.ucms.certificate.dto.CityDTO;
+import com.newland.ucms.certificate.dto.DistrictDTO;
+import com.newland.ucms.certificate.dto.InstitutionDTO;
+import com.newland.ucms.certificate.service.ExternalDataService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * 外部数据集成服务实现
+ *
+ * @author UCMS Team
+ * @since 2026-01-27
+ */
+<span class="fc" id="L28">@Slf4j</span>
+@Service
+<span class="fc" id="L30">public class ExternalDataServiceImpl implements ExternalDataService {</span>
+
+  @Autowired
+  private ExternalApiConfig externalApiConfig;
+
+  @Autowired
+  private RestTemplate restTemplate;
+
+  @Autowired
+  private ObjectMapper objectMapper;
+
+  @Override
+  @Cacheable(value = &quot;businessChannels&quot;, key = &quot;'all'&quot;)
+  public List&lt;BusinessChannelDTO&gt; getBusinessChannels() {
+<span class="nc" id="L44">    log.info(&quot;调用外部API获取办理通路列表，URL：{}&quot;, externalApiConfig.getBusinessChannelUrl());</span>
+    try {
+<span class="nc" id="L46">      String response = restTemplate.getForObject(externalApiConfig.getBusinessChannelUrl(), String.class);</span>
+<span class="nc" id="L47">      List&lt;BusinessChannelDTO&gt; channels = objectMapper.readValue(response,</span>
+<span class="nc" id="L48">          new TypeReference&lt;List&lt;BusinessChannelDTO&gt;&gt;() {});</span>
+<span class="nc" id="L49">      log.info(&quot;成功获取办理通路列表，数量：{}&quot;, channels.size());</span>
+<span class="nc" id="L50">      return channels;</span>
+<span class="nc" id="L51">    } catch (Exception e) {</span>
+<span class="nc" id="L52">      log.error(&quot;获取办理通路列表失败&quot;, e);</span>
+<span class="nc" id="L53">      return Collections.emptyList();</span>
+    }
+  }
+
+  @Override
+  @Cacheable(value = &quot;channelSubTypes&quot;, key = &quot;'all'&quot;)
+  public List&lt;ChannelSubTypeDTO&gt; getChannelSubTypes() {
+<span class="nc" id="L60">    log.info(&quot;调用外部API获取渠道小类列表，URL：{}&quot;, externalApiConfig.getChannelSubTypeUrl());</span>
+    try {
+<span class="nc" id="L62">      String response = restTemplate.getForObject(externalApiConfig.getChannelSubTypeUrl(), String.class);</span>
+<span class="nc" id="L63">      List&lt;ChannelSubTypeDTO&gt; subTypes = objectMapper.readValue(response,</span>
+<span class="nc" id="L64">          new TypeReference&lt;List&lt;ChannelSubTypeDTO&gt;&gt;() {});</span>
+<span class="nc" id="L65">      log.info(&quot;成功获取渠道小类列表，数量：{}&quot;, subTypes.size());</span>
+<span class="nc" id="L66">      return subTypes;</span>
+<span class="nc" id="L67">    } catch (Exception e) {</span>
+<span class="nc" id="L68">      log.error(&quot;获取渠道小类列表失败&quot;, e);</span>
+<span class="nc" id="L69">      return Collections.emptyList();</span>
+    }
+  }
+
+  @Override
+  @Cacheable(value = &quot;cities&quot;, key = &quot;'all'&quot;)
+  public List&lt;CityDTO&gt; getCities() {
+<span class="nc" id="L76">    log.info(&quot;调用外部API获取地市列表，URL：{}&quot;, externalApiConfig.getCityUrl());</span>
+    try {
+<span class="nc" id="L78">      String response = restTemplate.getForObject(externalApiConfig.getCityUrl(), String.class);</span>
+<span class="nc" id="L79">      List&lt;CityDTO&gt; cities = objectMapper.readValue(response, new TypeReference&lt;List&lt;CityDTO&gt;&gt;() {});</span>
+<span class="nc" id="L80">      log.info(&quot;成功获取地市列表，数量：{}&quot;, cities.size());</span>
+<span class="nc" id="L81">      return cities;</span>
+<span class="nc" id="L82">    } catch (Exception e) {</span>
+<span class="nc" id="L83">      log.error(&quot;获取地市列表失败&quot;, e);</span>
+<span class="nc" id="L84">      return Collections.emptyList();</span>
+    }
+  }
+
+  @Override
+  @Cacheable(value = &quot;districts&quot;, key = &quot;#cityCode&quot;)
+  public List&lt;DistrictDTO&gt; getDistricts(String cityCode) {
+<span class="nc" id="L91">    log.info(&quot;调用外部API获取区县列表，地市代码：{}，URL：{}&quot;, cityCode, externalApiConfig.getDistrictUrl());</span>
+    try {
+<span class="nc" id="L93">      String response = restTemplate.getForObject(</span>
+<span class="nc" id="L94">          externalApiConfig.getDistrictUrl() + &quot;?cityCode=&quot; + cityCode,</span>
+          String.class);
+<span class="nc" id="L96">      List&lt;DistrictDTO&gt; districts = objectMapper.readValue(response,</span>
+<span class="nc" id="L97">          new TypeReference&lt;List&lt;DistrictDTO&gt;&gt;() {});</span>
+<span class="nc" id="L98">      log.info(&quot;成功获取区县列表，数量：{}&quot;, districts.size());</span>
+<span class="nc" id="L99">      return districts;</span>
+<span class="nc" id="L100">    } catch (Exception e) {</span>
+<span class="nc" id="L101">      log.error(&quot;获取区县列表失败&quot;, e);</span>
+<span class="nc" id="L102">      return Collections.emptyList();</span>
+    }
+  }
+
+  @Override
+  @Cacheable(value = &quot;institutions&quot;, key = &quot;#cityCode + '_' + #districtCode&quot;)
+  public List&lt;InstitutionDTO&gt; getInstitutions(String cityCode, String districtCode) {
+<span class="nc" id="L109">    log.info(&quot;调用外部API获取机构列表，地市：{}，区县：{}，URL：{}&quot;,</span>
+<span class="nc" id="L110">        cityCode, districtCode, externalApiConfig.getInstitutionUrl());</span>
+    try {
+<span class="nc" id="L112">      String response = restTemplate.getForObject(</span>
+<span class="nc" id="L113">          externalApiConfig.getInstitutionUrl() + &quot;?cityCode=&quot; + cityCode + &quot;&amp;districtCode=&quot; + districtCode,</span>
+          String.class);
+<span class="nc" id="L115">      List&lt;InstitutionDTO&gt; institutions = objectMapper.readValue(response,</span>
+<span class="nc" id="L116">          new TypeReference&lt;List&lt;InstitutionDTO&gt;&gt;() {});</span>
+<span class="nc" id="L117">      log.info(&quot;成功获取机构列表，数量：{}&quot;, institutions.size());</span>
+<span class="nc" id="L118">      return institutions;</span>
+<span class="nc" id="L119">    } catch (Exception e) {</span>
+<span class="nc" id="L120">      log.error(&quot;获取机构列表失败&quot;, e);</span>
+<span class="nc" id="L121">      return Collections.emptyList();</span>
+    }
+  }
+
+  @Override
+  @CacheEvict(value = {&quot;businessChannels&quot;, &quot;channelSubTypes&quot;, &quot;cities&quot;, &quot;districts&quot;, &quot;institutions&quot;},
+              allEntries = true)
+  public void clearCache() {
+<span class="nc" id="L129">    log.info(&quot;清除所有外部数据缓存&quot;);</span>
+<span class="nc" id="L130">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

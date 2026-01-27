@@ -1,0 +1,418 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ValidationServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UCMS Certificate Management</a> &gt; <a href="index.source.html" class="el_package">com.newland.ucms.certificate.service.impl</a> &gt; <span class="el_source">ValidationServiceImpl.java</span></div><h1>ValidationServiceImpl.java</h1><pre class="source lang-java linenums">package com.newland.ucms.certificate.service.impl;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.newland.ucms.certificate.dto.CertificateRequest;
+import com.newland.ucms.certificate.dto.CertificateValidationResponse;
+import com.newland.ucms.certificate.entity.CertificateType;
+import com.newland.ucms.certificate.entity.CertificateTypeField;
+import com.newland.ucms.certificate.entity.ScopeConfig;
+import com.newland.ucms.certificate.entity.ValidationRuleConfig;
+import com.newland.ucms.certificate.entity.ValidationRuleItem;
+import com.newland.ucms.certificate.enums.StatusEnum;
+import com.newland.ucms.certificate.mapper.CertificateTypeFieldMapper;
+import com.newland.ucms.certificate.mapper.CertificateTypeMapper;
+import com.newland.ucms.certificate.mapper.ScopeConfigMapper;
+import com.newland.ucms.certificate.mapper.ValidationRuleConfigMapper;
+import com.newland.ucms.certificate.mapper.ValidationRuleItemMapper;
+import com.newland.ucms.certificate.service.ValidationService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 统一验证服务实现
+ *
+ * @author UCMS Team
+ * @since 2026-01-27
+ */
+<span class="fc" id="L37">@Slf4j</span>
+@Service
+<span class="fc" id="L39">public class ValidationServiceImpl implements ValidationService {</span>
+
+  @Autowired
+  private ScopeConfigMapper scopeConfigMapper;
+
+  @Autowired
+  private CertificateTypeMapper certificateTypeMapper;
+
+  @Autowired
+  private CertificateTypeFieldMapper certificateTypeFieldMapper;
+
+  @Autowired
+  private ValidationRuleConfigMapper validationRuleConfigMapper;
+
+  @Autowired
+  private ValidationRuleItemMapper validationRuleItemMapper;
+
+  @Autowired
+  private com.newland.ucms.certificate.mapper.FieldLibraryMapper fieldLibraryMapper;
+
+  @Override
+  public CertificateValidationResponse validateCertificate(CertificateRequest request) {
+<span class="fc" id="L61">    log.info(&quot;开始验证证件信息，请求参数：{}&quot;, request);</span>
+
+<span class="fc" id="L63">    CertificateValidationResponse response = new CertificateValidationResponse();</span>
+<span class="fc" id="L64">    response.setSuccess(true);</span>
+<span class="fc" id="L65">    response.setErrors(new HashMap&lt;&gt;());</span>
+
+    try {
+      // 步骤1：根据业务信息匹配应用范围配置
+<span class="fc" id="L69">      ScopeConfig scopeConfig = findMatchingScopeConfig(request);</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">      if (scopeConfig == null) {</span>
+<span class="fc" id="L71">        log.warn(&quot;未找到匹配的应用范围配置，请求参数：{}&quot;, request);</span>
+<span class="fc" id="L72">        response.setSuccess(false);</span>
+<span class="fc" id="L73">        response.setMessage(&quot;未找到匹配的应用范围配置&quot;);</span>
+<span class="fc" id="L74">        return response;</span>
+      }
+
+      // 步骤2：获取允许的证件类型
+<span class="fc" id="L78">      String allowedCertTypes = scopeConfig.getAllowedCertTypes();</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">      if (!StringUtils.hasText(allowedCertTypes)) {</span>
+<span class="nc" id="L80">        log.warn(&quot;应用范围配置中未配置允许的证件类型&quot;);</span>
+<span class="nc" id="L81">        response.setSuccess(false);</span>
+<span class="nc" id="L82">        response.setMessage(&quot;未配置允许的证件类型&quot;);</span>
+<span class="nc" id="L83">        return response;</span>
+      }
+
+      // 步骤3：验证证件类型是否在允许的范围内
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">      if (StringUtils.hasText(request.getCertTypeCode())) {</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        if (!allowedCertTypes.contains(request.getCertTypeCode())) {</span>
+<span class="fc" id="L89">          log.warn(&quot;证件类型{}不在允许的范围内：{}&quot;, request.getCertTypeCode(), allowedCertTypes);</span>
+<span class="fc" id="L90">          response.setSuccess(false);</span>
+<span class="fc" id="L91">          response.setMessage(&quot;证件类型不在允许的范围内&quot;);</span>
+<span class="fc" id="L92">          return response;</span>
+        }
+      }
+
+      // 如果没有指定证件类型，使用第一个允许的证件类型
+<span class="fc" id="L97">      String certTypeCode = request.getCertTypeCode();</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">      if (!StringUtils.hasText(certTypeCode)) {</span>
+<span class="nc" id="L99">        certTypeCode = allowedCertTypes.split(&quot;[|,]&quot;)[0].trim();</span>
+<span class="nc" id="L100">        log.info(&quot;未指定证件类型，使用默认证件类型：{}&quot;, certTypeCode);</span>
+      }
+
+      // 步骤4：查询证件类型配置
+<span class="fc" id="L104">      CertificateType certificateType = certificateTypeMapper.selectOne(</span>
+          new QueryWrapper&lt;CertificateType&gt;()
+<span class="fc" id="L106">              .eq(&quot;cert_type_code&quot;, certTypeCode)</span>
+<span class="fc" id="L107">              .eq(&quot;status&quot;, StatusEnum.ENABLED.getCode())</span>
+      );
+
+<span class="fc bfc" id="L110" title="All 2 branches covered.">      if (certificateType == null) {</span>
+<span class="fc" id="L111">        log.warn(&quot;证件类型配置不存在：{}&quot;, certTypeCode);</span>
+<span class="fc" id="L112">        response.setSuccess(false);</span>
+<span class="fc" id="L113">        response.setMessage(&quot;证件类型配置不存在&quot;);</span>
+<span class="fc" id="L114">        return response;</span>
+      }
+
+      // 步骤5：查询证件类型字段配置
+<span class="fc" id="L118">      List&lt;CertificateTypeField&gt; fields = certificateTypeFieldMapper.selectList(</span>
+          new QueryWrapper&lt;CertificateTypeField&gt;()
+<span class="fc" id="L120">              .eq(&quot;cert_type_code&quot;, certTypeCode)</span>
+<span class="fc" id="L121">              .eq(&quot;is_deleted&quot;, 0)</span>
+<span class="fc" id="L122">              .orderByAsc(&quot;sort_order&quot;)</span>
+      );
+
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">      if (CollectionUtils.isEmpty(fields)) {</span>
+<span class="nc" id="L126">        log.warn(&quot;证件类型{}未配置字段&quot;, certTypeCode);</span>
+<span class="nc" id="L127">        response.setSuccess(false);</span>
+<span class="nc" id="L128">        response.setMessage(&quot;证件类型未配置字段&quot;);</span>
+<span class="nc" id="L129">        return response;</span>
+      }
+
+      // 步骤6：验证必填字段
+<span class="fc" id="L133">      validateRequiredFields(request, fields, response);</span>
+
+      // 步骤7：查询验证规则配置
+<span class="fc" id="L136">      ValidationRuleConfig ruleConfig = validationRuleConfigMapper.selectOne(</span>
+          new QueryWrapper&lt;ValidationRuleConfig&gt;()
+<span class="fc" id="L138">              .eq(&quot;business_code&quot;, request.getBusinessCode())</span>
+<span class="fc" id="L139">              .eq(&quot;status&quot;, StatusEnum.ENABLED.getCode())</span>
+<span class="fc" id="L140">              .eq(&quot;is_deleted&quot;, 0)</span>
+      );
+
+<span class="fc bfc" id="L143" title="All 2 branches covered.">      if (ruleConfig != null) {</span>
+        // 步骤8：查询验证规则明细
+<span class="fc" id="L145">        List&lt;ValidationRuleItem&gt; ruleItems = validationRuleItemMapper.selectList(</span>
+            new QueryWrapper&lt;ValidationRuleItem&gt;()
+<span class="fc" id="L147">                .eq(&quot;rule_id&quot;, ruleConfig.getId())</span>
+<span class="fc" id="L148">                .eq(&quot;is_deleted&quot;, 0)</span>
+<span class="fc" id="L149">                .orderByAsc(&quot;sort_order&quot;)</span>
+        );
+
+        // 步骤9：根据验证规则验证字段值
+<span class="fc" id="L153">        validateFieldValues(request, ruleItems, response);</span>
+      }
+
+      // 步骤10：验证字段数据类型
+<span class="fc" id="L157">      validateFieldDataTypes(request, fields, response);</span>
+
+      // 检查是否有错误
+<span class="fc bfc" id="L160" title="All 2 branches covered.">      if (!response.getErrors().isEmpty()) {</span>
+<span class="fc" id="L161">        response.setSuccess(false);</span>
+<span class="fc" id="L162">        response.setMessage(&quot;证件验证失败&quot;);</span>
+      }
+
+<span class="fc bfc" id="L165" title="All 2 branches covered.">      log.info(&quot;证件验证完成，结果：{}&quot;, response.getSuccess() ? &quot;成功&quot; : &quot;失败&quot;);</span>
+<span class="fc" id="L166">      return response;</span>
+
+<span class="nc" id="L168">    } catch (Exception e) {</span>
+<span class="nc" id="L169">      log.error(&quot;证件验证过程中发生异常&quot;, e);</span>
+<span class="nc" id="L170">      response.setSuccess(false);</span>
+<span class="nc" id="L171">      response.setMessage(&quot;证件验证过程中发生异常：&quot; + e.getMessage());</span>
+<span class="nc" id="L172">      return response;</span>
+    }
+  }
+
+  /**
+   * 根据业务信息匹配应用范围配置
+   * 匹配规则：优先级从高到低依次匹配
+   * 1. 全部匹配（渠道小类 + 地市 + 区县 + 机构）
+   * 2. 渠道小类 + 地市 + 区县
+   * 3. 渠道小类 + 地市
+   * 4. 渠道小类
+   * 5. 全局配置（所有字段为空）
+   */
+  private ScopeConfig findMatchingScopeConfig(CertificateRequest request) {
+    // 先尝试精确匹配
+<span class="fc" id="L187">    QueryWrapper&lt;ScopeConfig&gt; queryWrapper = new QueryWrapper&lt;&gt;();</span>
+<span class="fc" id="L188">    queryWrapper.eq(&quot;status&quot;, StatusEnum.ENABLED.getCode());</span>
+<span class="fc" id="L189">    queryWrapper.eq(&quot;is_deleted&quot;, 0);</span>
+
+    // 添加渠道小类匹配条件
+<span class="pc bpc" id="L192" title="1 of 2 branches missed.">    if (StringUtils.hasText(request.getChannelSubType())) {</span>
+<span class="fc" id="L193">      queryWrapper.eq(&quot;channel_sub_type&quot;, request.getChannelSubType());</span>
+    } else {
+<span class="nc" id="L195">      queryWrapper.isNull(&quot;channel_sub_type&quot;);</span>
+    }
+
+    // 添加地市匹配条件
+<span class="pc bpc" id="L199" title="1 of 2 branches missed.">    if (StringUtils.hasText(request.getCity())) {</span>
+<span class="nc" id="L200">      queryWrapper.eq(&quot;city&quot;, request.getCity());</span>
+    } else {
+<span class="fc" id="L202">      queryWrapper.isNull(&quot;city&quot;);</span>
+    }
+
+    // 添加区县匹配条件
+<span class="pc bpc" id="L206" title="1 of 2 branches missed.">    if (StringUtils.hasText(request.getDistrict())) {</span>
+<span class="nc" id="L207">      queryWrapper.eq(&quot;district&quot;, request.getDistrict());</span>
+    } else {
+<span class="fc" id="L209">      queryWrapper.isNull(&quot;district&quot;);</span>
+    }
+
+    // 添加机构匹配条件
+<span class="pc bpc" id="L213" title="1 of 2 branches missed.">    if (StringUtils.hasText(request.getInstitution())) {</span>
+<span class="nc" id="L214">      queryWrapper.eq(&quot;institution&quot;, request.getInstitution());</span>
+    } else {
+<span class="fc" id="L216">      queryWrapper.isNull(&quot;institution&quot;);</span>
+    }
+
+<span class="fc" id="L219">    List&lt;ScopeConfig&gt; exactMatches = scopeConfigMapper.selectList(queryWrapper);</span>
+<span class="fc bfc" id="L220" title="All 2 branches covered.">    if (!CollectionUtils.isEmpty(exactMatches)) {</span>
+<span class="fc" id="L221">      return exactMatches.get(0);</span>
+    }
+
+    // 如果没有精确匹配，则使用全局配置
+<span class="fc" id="L225">    QueryWrapper&lt;ScopeConfig&gt; globalQuery = new QueryWrapper&lt;&gt;();</span>
+<span class="fc" id="L226">    globalQuery.eq(&quot;status&quot;, StatusEnum.ENABLED.getCode());</span>
+<span class="fc" id="L227">    globalQuery.eq(&quot;is_deleted&quot;, 0);</span>
+<span class="fc" id="L228">    globalQuery.isNull(&quot;business_channel&quot;);</span>
+<span class="fc" id="L229">    globalQuery.isNull(&quot;channel_sub_type&quot;);</span>
+<span class="fc" id="L230">    globalQuery.isNull(&quot;city&quot;);</span>
+<span class="fc" id="L231">    globalQuery.isNull(&quot;district&quot;);</span>
+<span class="fc" id="L232">    globalQuery.isNull(&quot;institution&quot;);</span>
+
+<span class="fc" id="L234">    List&lt;ScopeConfig&gt; globalMatches = scopeConfigMapper.selectList(globalQuery);</span>
+<span class="pc bpc" id="L235" title="1 of 2 branches missed.">    return CollectionUtils.isEmpty(globalMatches) ? null : globalMatches.get(0);</span>
+  }
+
+  /**
+   * 验证必填字段
+   */
+  private void validateRequiredFields(CertificateRequest request,
+                                   List&lt;CertificateTypeField&gt; fields,
+                                   CertificateValidationResponse response) {
+<span class="fc bfc" id="L244" title="All 2 branches covered.">    for (CertificateTypeField field : fields) {</span>
+<span class="fc bfc" id="L245" title="All 2 branches covered.">      if (field.getIsRequired() == 1) {</span>
+<span class="pc bpc" id="L246" title="1 of 2 branches missed.">        Object value = request.getFieldValues() != null</span>
+<span class="fc" id="L247">            ? request.getFieldValues().get(field.getFieldNameEn())</span>
+<span class="pc" id="L248">            : null;</span>
+
+<span class="pc bpc" id="L250" title="1 of 4 branches missed.">        if (value == null || value.toString().trim().isEmpty()) {</span>
+<span class="fc" id="L251">          String fieldName = field.getFieldNameCn();</span>
+<span class="fc" id="L252">          log.warn(&quot;必填字段{}为空&quot;, fieldName);</span>
+<span class="fc" id="L253">          response.getErrors().put(field.getFieldNameEn(), fieldName + &quot;不能为空&quot;);</span>
+        }
+      }
+<span class="fc" id="L256">    }</span>
+<span class="fc" id="L257">  }</span>
+
+  /**
+   * 根据验证规则验证字段值
+   */
+  private void validateFieldValues(CertificateRequest request,
+                                List&lt;ValidationRuleItem&gt; ruleItems,
+                                CertificateValidationResponse response) {
+<span class="fc" id="L265">    Map&lt;String, Object&gt; fieldValues = request.getFieldValues();</span>
+<span class="pc bpc" id="L266" title="2 of 4 branches missed.">    if (fieldValues == null || fieldValues.isEmpty()) {</span>
+<span class="nc" id="L267">      return;</span>
+    }
+
+<span class="fc bfc" id="L270" title="All 2 branches covered.">    for (ValidationRuleItem rule : ruleItems) {</span>
+<span class="fc" id="L271">      String fieldName = rule.getFieldName();</span>
+<span class="fc" id="L272">      String logic = rule.getValidationLogic();</span>
+<span class="fc" id="L273">      String value = rule.getValidationValue();</span>
+
+<span class="fc" id="L275">      Object fieldValue = fieldValues.get(fieldName);</span>
+<span class="pc bpc" id="L276" title="2 of 4 branches missed.">      if (fieldValue == null || fieldValue.toString().trim().isEmpty()) {</span>
+<span class="nc" id="L277">        continue; // 字段为空，跳过验证（必填字段已在前面验证）</span>
+      }
+
+<span class="fc" id="L280">      String fieldValueStr = fieldValue.toString().trim();</span>
+
+<span class="pc bpc" id="L282" title="8 of 9 branches missed.">      switch (logic) {</span>
+        case &quot;&gt;&quot;:
+<span class="nc bnc" id="L284" title="All 4 branches missed.">          if (!isNumeric(fieldValueStr) || Double.parseDouble(fieldValueStr) &lt;= Double.parseDouble(value)) {</span>
+<span class="nc" id="L285">            response.getErrors().put(fieldName, fieldName + &quot;必须大于&quot; + value);</span>
+          }
+          break;
+
+        case &quot;&lt;&quot;:
+<span class="nc bnc" id="L290" title="All 4 branches missed.">          if (!isNumeric(fieldValueStr) || Double.parseDouble(fieldValueStr) &gt;= Double.parseDouble(value)) {</span>
+<span class="nc" id="L291">            response.getErrors().put(fieldName, fieldName + &quot;必须小于&quot; + value);</span>
+          }
+          break;
+
+        case &quot;&gt;=&quot;:
+<span class="pc bpc" id="L296" title="2 of 4 branches missed.">          if (!isNumeric(fieldValueStr) || Double.parseDouble(fieldValueStr) &lt; Double.parseDouble(value)) {</span>
+<span class="fc" id="L297">            response.getErrors().put(fieldName, fieldName + &quot;必须大于等于&quot; + value);</span>
+          }
+          break;
+
+        case &quot;&lt;=&quot;:
+<span class="nc bnc" id="L302" title="All 4 branches missed.">          if (!isNumeric(fieldValueStr) || Double.parseDouble(fieldValueStr) &gt; Double.parseDouble(value)) {</span>
+<span class="nc" id="L303">            response.getErrors().put(fieldName, fieldName + &quot;必须小于等于&quot; + value);</span>
+          }
+          break;
+
+        case &quot;==&quot;:
+<span class="nc bnc" id="L308" title="All 2 branches missed.">          if (!fieldValueStr.equals(value)) {</span>
+<span class="nc" id="L309">            response.getErrors().put(fieldName, fieldName + &quot;必须等于&quot; + value);</span>
+          }
+          break;
+
+        case &quot;!=&quot;:
+<span class="nc bnc" id="L314" title="All 2 branches missed.">          if (fieldValueStr.equals(value)) {</span>
+<span class="nc" id="L315">            response.getErrors().put(fieldName, fieldName + &quot;不能等于&quot; + value);</span>
+          }
+          break;
+
+        case &quot;contains&quot;:
+<span class="nc bnc" id="L320" title="All 2 branches missed.">          if (!fieldValueStr.contains(value)) {</span>
+<span class="nc" id="L321">            response.getErrors().put(fieldName, fieldName + &quot;必须包含&quot; + value);</span>
+          }
+          break;
+
+        case &quot;regex&quot;:
+<span class="nc bnc" id="L326" title="All 2 branches missed.">          if (!fieldValueStr.matches(value)) {</span>
+<span class="nc" id="L327">            response.getErrors().put(fieldName, fieldName + &quot;格式不正确&quot;);</span>
+          }
+          break;
+
+        default:
+<span class="nc" id="L332">          log.warn(&quot;未知的验证逻辑：{}&quot;, logic);</span>
+      }
+<span class="fc" id="L334">    }</span>
+<span class="fc" id="L335">  }</span>
+
+  /**
+   * 验证字段数据类型
+   */
+  private void validateFieldDataTypes(CertificateRequest request,
+                                     List&lt;CertificateTypeField&gt; fields,
+                                     CertificateValidationResponse response) {
+<span class="fc" id="L343">    Map&lt;String, Object&gt; fieldValues = request.getFieldValues();</span>
+<span class="pc bpc" id="L344" title="2 of 4 branches missed.">    if (fieldValues == null || fieldValues.isEmpty()) {</span>
+<span class="nc" id="L345">      return;</span>
+    }
+
+<span class="fc bfc" id="L348" title="All 2 branches covered.">    for (CertificateTypeField field : fields) {</span>
+<span class="fc" id="L349">      String fieldName = field.getFieldNameEn();</span>
+<span class="fc" id="L350">      Object fieldValue = fieldValues.get(fieldName);</span>
+
+<span class="pc bpc" id="L352" title="1 of 4 branches missed.">      if (fieldValue == null || fieldValue.toString().trim().isEmpty()) {</span>
+<span class="nc" id="L353">        continue;</span>
+      }
+
+      // 从字段库中获取字段数据类型
+<span class="fc" id="L357">      com.newland.ucms.certificate.entity.FieldLibrary fieldLibrary = null;</span>
+<span class="fc bfc" id="L358" title="All 2 branches covered.">      if (field.getFieldId() != null) {</span>
+<span class="fc" id="L359">        fieldLibrary = fieldLibraryMapper.selectById(field.getFieldId());</span>
+      }
+<span class="fc bfc" id="L361" title="All 2 branches covered.">      String fieldType = fieldLibrary != null ? fieldLibrary.getFieldDataType() : &quot;text&quot;;</span>
+<span class="fc" id="L362">      String fieldValueStr = fieldValue.toString().trim();</span>
+
+      try {
+<span class="pc bpc" id="L365" title="3 of 5 branches missed.">        switch (fieldType) {</span>
+          case &quot;number&quot;:
+<span class="pc bpc" id="L367" title="1 of 2 branches missed.">            if (!isNumeric(fieldValueStr)) {</span>
+<span class="nc" id="L368">              response.getErrors().put(fieldName, fieldName + &quot;必须是数字&quot;);</span>
+            }
+            break;
+
+          case &quot;text&quot;:
+            // 文本类型不需要特殊验证
+<span class="fc" id="L374">            break;</span>
+
+          case &quot;date&quot;:
+<span class="nc" id="L377">            LocalDate.parse(fieldValueStr, DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd&quot;));</span>
+<span class="nc" id="L378">            break;</span>
+
+          case &quot;date_range&quot;:
+            // 日期范围格式：YYYY-MM-DD 至 YYYY-MM-DD
+<span class="nc" id="L382">            String[] dateParts = fieldValueStr.split(&quot; 至 &quot;);</span>
+<span class="nc bnc" id="L383" title="All 2 branches missed.">            if (dateParts.length != 2) {</span>
+<span class="nc" id="L384">              response.getErrors().put(fieldName, fieldName + &quot;格式不正确，应为：YYYY-MM-DD 至 YYYY-MM-DD&quot;);</span>
+            } else {
+<span class="nc" id="L386">              LocalDate startDate = LocalDate.parse(dateParts[0].trim(), DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd&quot;));</span>
+<span class="nc" id="L387">              LocalDate endDate = LocalDate.parse(dateParts[1].trim(), DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd&quot;));</span>
+<span class="nc bnc" id="L388" title="All 2 branches missed.">              if (startDate.isAfter(endDate)) {</span>
+<span class="nc" id="L389">                response.getErrors().put(fieldName, fieldName + &quot;开始日期不能晚于结束日期&quot;);</span>
+              }
+            }
+<span class="nc" id="L392">            break;</span>
+
+          default:
+<span class="nc" id="L395">            log.warn(&quot;未知的字段数据类型：{}&quot;, fieldType);</span>
+        }
+<span class="nc" id="L397">      } catch (DateTimeParseException e) {</span>
+<span class="nc" id="L398">        response.getErrors().put(fieldName, fieldName + &quot;日期格式不正确&quot;);</span>
+<span class="fc" id="L399">      }</span>
+<span class="fc" id="L400">    }</span>
+<span class="fc" id="L401">  }</span>
+
+  /**
+   * 判断字符串是否为数字
+   */
+  private boolean isNumeric(String str) {
+<span class="pc bpc" id="L407" title="2 of 4 branches missed.">    if (str == null || str.isEmpty()) {</span>
+<span class="nc" id="L408">      return false;</span>
+    }
+    try {
+<span class="fc" id="L411">      Double.parseDouble(str);</span>
+<span class="fc" id="L412">      return true;</span>
+<span class="nc" id="L413">    } catch (NumberFormatException e) {</span>
+<span class="nc" id="L414">      return false;</span>
+    }
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

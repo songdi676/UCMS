@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.ucms.certificate.service.ValidationServiceTest
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.455 s -- in com.ucms.certificate.service.ValidationServiceTest
