@@ -11,7 +11,12 @@ spring:
     url: jdbc:h2:mem:testdb
     driver-class-name: org.h2.Driver
     username: sa
-    password:
+    password: 
+    # 临时启用SQL脚本初始化（用于测试）
+  sql:
+    init:
+      mode: always
+    continue-on-error: false
 
   # H2控制台配置（仅开发环境）
   h2:
