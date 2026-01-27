@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FieldLibraryController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UCMS Certificate Management</a> &gt; <a href="index.source.html" class="el_package">com.newland.ucms.certificate.controller</a> &gt; <span class="el_source">FieldLibraryController.java</span></div><h1>FieldLibraryController.java</h1><pre class="source lang-java linenums">package com.newland.ucms.certificate.controller;
+
+import com.newland.ucms.certificate.dto.FieldLibraryDTO;
+import com.newland.ucms.certificate.service.FieldLibraryService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * 字段库控制器
+ *
+ * @author UCMS Team
+ * @since 2026-01-27
+ */
+@RestController
+@RequestMapping(&quot;/api/field&quot;)
+<span class="fc" id="L19">public class FieldLibraryController {</span>
+
+  @Autowired
+  private FieldLibraryService fieldLibraryService;
+
+  /**
+   * 获取公共字段列表
+   *
+   * @return 公共字段列表
+   */
+  @GetMapping(&quot;/public&quot;)
+  public ResponseEntity&lt;List&lt;FieldLibraryDTO&gt;&gt; getPublicFields() {
+<span class="nc" id="L31">    List&lt;FieldLibraryDTO&gt; fields = fieldLibraryService.getPublicFields();</span>
+<span class="nc" id="L32">    return ResponseEntity.ok(fields);</span>
+  }
+
+  /**
+   * 根据字段类型查询字段列表
+   *
+   * @param fieldType 字段类型（PUBLIC/CUSTOM）
+   * @return 字段列表
+   */
+  @GetMapping(&quot;/type/{fieldType}&quot;)
+  public ResponseEntity&lt;List&lt;FieldLibraryDTO&gt;&gt; getFieldsByType(@PathVariable String fieldType) {
+<span class="nc" id="L43">    List&lt;FieldLibraryDTO&gt; fields = fieldLibraryService.getFieldsByType(fieldType);</span>
+<span class="nc" id="L44">    return ResponseEntity.ok(fields);</span>
+  }
+
+  /**
+   * 创建自定义字段
+   *
+   * @param fieldLibraryDTO 字段信息
+   * @return 创建后的字段信息
+   */
+  @PostMapping(&quot;/custom&quot;)
+  public ResponseEntity&lt;FieldLibraryDTO&gt; createCustomField(@RequestBody FieldLibraryDTO fieldLibraryDTO) {
+<span class="nc" id="L55">    FieldLibraryDTO field = fieldLibraryService.createCustomField(fieldLibraryDTO);</span>
+<span class="nc" id="L56">    return ResponseEntity.ok(field);</span>
+  }
+
+  /**
+   * 更新字段
+   *
+   * @param id 字段ID
+   * @param fieldLibraryDTO 字段信息
+   * @return 更新后的字段信息
+   */
+  @PutMapping(&quot;/{id}&quot;)
+  public ResponseEntity&lt;FieldLibraryDTO&gt; updateField(
+      @PathVariable Long id,
+      @RequestBody FieldLibraryDTO fieldLibraryDTO) {
+<span class="nc" id="L70">    FieldLibraryDTO field = fieldLibraryService.updateField(id, fieldLibraryDTO);</span>
+<span class="nc" id="L71">    return ResponseEntity.ok(field);</span>
+  }
+
+  /**
+   * 删除字段
+   *
+   * @param id 字段ID
+   */
+  @DeleteMapping(&quot;/{id}&quot;)
+  public ResponseEntity&lt;Void&gt; deleteField(@PathVariable Long id) {
+<span class="nc" id="L81">    fieldLibraryService.deleteField(id);</span>
+<span class="nc" id="L82">    return ResponseEntity.ok().build();</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

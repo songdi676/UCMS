@@ -1,0 +1,9 @@
+com\newland\ucms\certificate\service\ScopeConfigService.class
+com\newland\ucms\certificate\config\CorsConfig.class
+com\newland\ucms\certificate\service\CertificateTypeService.class
+com\newland\ucms\certificate\controller\CertificateTypeController.class
+com\newland\ucms\certificate\service\impl\CertificateTypeServiceImpl.class
+com\newland\ucms\certificate\service\FieldLibraryService.class
+com\newland\ucms\certificate\service\impl\FieldLibraryServiceImpl.class
+com\newland\ucms\certificate\service\impl\ScopeConfigServiceImpl.class
+com\newland\ucms\certificate\controller\FieldLibraryController.class

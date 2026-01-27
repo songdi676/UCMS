@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ScopeConfigServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UCMS Certificate Management</a> &gt; <a href="index.source.html" class="el_package">com.newland.ucms.certificate.service.impl</a> &gt; <span class="el_source">ScopeConfigServiceImpl.java</span></div><h1>ScopeConfigServiceImpl.java</h1><pre class="source lang-java linenums">package com.newland.ucms.certificate.service.impl;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.newland.ucms.certificate.dto.ScopeConfigDTO;
+import com.newland.ucms.certificate.entity.ScopeConfig;
+import com.newland.ucms.certificate.enums.StatusEnum;
+import com.newland.ucms.certificate.mapper.ScopeConfigMapper;
+import com.newland.ucms.certificate.service.ScopeConfigService;
+import org.springframework.beans.BeanUtils;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import java.util.Map;
+
+/**
+ * 应用范围配置服务实现类
+ *
+ * @author UCMS Team
+ * @since 2026-01-27
+ */
+@Service
+<span class="fc" id="L26">public class ScopeConfigServiceImpl extends ServiceImpl&lt;ScopeConfigMapper, ScopeConfig&gt;</span>
+    implements ScopeConfigService {
+
+  @Override
+  public IPage&lt;ScopeConfigDTO&gt; getScopeConfigList(int page, int pageSize, Map&lt;String, Object&gt; params) {
+<span class="nc" id="L31">    Page&lt;ScopeConfig&gt; pageParam = new Page&lt;&gt;(page, pageSize);</span>
+
+<span class="nc" id="L33">    LambdaQueryWrapper&lt;ScopeConfig&gt; queryWrapper = new LambdaQueryWrapper&lt;&gt;();</span>
+<span class="nc" id="L34">    queryWrapper.eq(ScopeConfig::getIsDeleted, 0);</span>
+
+    // 应用系统查询
+<span class="nc bnc" id="L37" title="All 4 branches missed.">    if (params.containsKey(&quot;businessChannel&quot;) &amp;&amp; StringUtils.hasText(params.get(&quot;businessChannel&quot;).toString())) {</span>
+<span class="nc" id="L38">      queryWrapper.like(ScopeConfig::getBusinessChannel, params.get(&quot;businessChannel&quot;).toString());</span>
+    }
+
+    // 状态查询
+<span class="nc bnc" id="L42" title="All 4 branches missed.">    if (params.containsKey(&quot;status&quot;) &amp;&amp; params.get(&quot;status&quot;) != null) {</span>
+<span class="nc" id="L43">      queryWrapper.eq(ScopeConfig::getStatus, Integer.parseInt(params.get(&quot;status&quot;).toString()));</span>
+    }
+
+    // 按创建时间倒序
+<span class="nc" id="L47">    queryWrapper.orderByDesc(ScopeConfig::getCreatedAt);</span>
+
+<span class="nc" id="L49">    IPage&lt;ScopeConfig&gt; pageResult = baseMapper.selectPage(pageParam, queryWrapper);</span>
+
+    // 转换为DTO
+<span class="nc" id="L52">    Page&lt;ScopeConfigDTO&gt; dtoPage = new Page&lt;&gt;(page, pageSize);</span>
+<span class="nc" id="L53">    dtoPage.setTotal(pageResult.getTotal());</span>
+<span class="nc" id="L54">    dtoPage.setRecords(pageResult.getRecords().stream()</span>
+<span class="nc" id="L55">        .map(this::toDTO)</span>
+<span class="nc" id="L56">        .collect(java.util.stream.Collectors.toList()));</span>
+
+<span class="nc" id="L58">    return dtoPage;</span>
+  }
+
+  @Override
+  @Transactional(rollbackFor = Exception.class)
+  public ScopeConfigDTO createScopeConfig(ScopeConfigDTO scopeConfigDTO) {
+    // 验证必填字段
+<span class="nc bnc" id="L65" title="All 4 branches missed.">    if (scopeConfigDTO.getAllowedCertTypes() == null || scopeConfigDTO.getAllowedCertTypes().isEmpty()) {</span>
+<span class="nc" id="L66">      throw new IllegalArgumentException(&quot;请至少选择一个证件类型&quot;);</span>
+    }
+
+    // 创建应用范围配置
+<span class="nc" id="L70">    ScopeConfig scopeConfig = new ScopeConfig();</span>
+<span class="nc" id="L71">    BeanUtils.copyProperties(scopeConfigDTO, scopeConfig, &quot;id&quot;);</span>
+<span class="nc" id="L72">    scopeConfig.setStatus(StatusEnum.ENABLED.getCode());</span>
+<span class="nc" id="L73">    scopeConfig.setIsDeleted(0);</span>
+
+<span class="nc" id="L75">    baseMapper.insert(scopeConfig);</span>
+
+<span class="nc" id="L77">    return toDTO(scopeConfig);</span>
+  }
+
+  @Override
+  @Transactional(rollbackFor = Exception.class)
+  public ScopeConfigDTO updateScopeConfig(Long id, ScopeConfigDTO scopeConfigDTO) {
+<span class="nc" id="L83">    ScopeConfig scopeConfig = baseMapper.selectById(id);</span>
+<span class="nc bnc" id="L84" title="All 4 branches missed.">    if (scopeConfig == null || scopeConfig.getIsDeleted() == 1) {</span>
+<span class="nc" id="L85">      throw new IllegalArgumentException(&quot;应用范围配置不存在&quot;);</span>
+    }
+
+    // 更新应用范围配置
+<span class="nc" id="L89">    BeanUtils.copyProperties(scopeConfigDTO, scopeConfig, &quot;id&quot;);</span>
+<span class="nc" id="L90">    baseMapper.updateById(scopeConfig);</span>
+
+<span class="nc" id="L92">    return toDTO(scopeConfig);</span>
+  }
+
+  @Override
+  @Transactional(rollbackFor = Exception.class)
+  public void deleteScopeConfig(Long id) {
+<span class="nc" id="L98">    ScopeConfig scopeConfig = baseMapper.selectById(id);</span>
+<span class="nc bnc" id="L99" title="All 4 branches missed.">    if (scopeConfig == null || scopeConfig.getIsDeleted() == 1) {</span>
+<span class="nc" id="L100">      throw new IllegalArgumentException(&quot;应用范围配置不存在&quot;);</span>
+    }
+
+    // 逻辑删除
+<span class="nc" id="L104">    scopeConfig.setIsDeleted(1);</span>
+<span class="nc" id="L105">    baseMapper.updateById(scopeConfig);</span>
+<span class="nc" id="L106">  }</span>
+
+  /**
+   * 实体转DTO
+   *
+   * @param scopeConfig 实体
+   * @return DTO
+   */
+  private ScopeConfigDTO toDTO(ScopeConfig scopeConfig) {
+<span class="nc bnc" id="L115" title="All 2 branches missed.">    if (scopeConfig == null) {</span>
+<span class="nc" id="L116">      return null;</span>
+    }
+
+<span class="nc" id="L119">    ScopeConfigDTO dto = new ScopeConfigDTO();</span>
+<span class="nc" id="L120">    BeanUtils.copyProperties(scopeConfig, dto);</span>
+<span class="nc" id="L121">    dto.setId(scopeConfig.getId());</span>
+<span class="nc" id="L122">    return dto;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

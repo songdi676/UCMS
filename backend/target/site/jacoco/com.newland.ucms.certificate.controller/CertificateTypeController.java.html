@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CertificateTypeController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UCMS Certificate Management</a> &gt; <a href="index.source.html" class="el_package">com.newland.ucms.certificate.controller</a> &gt; <span class="el_source">CertificateTypeController.java</span></div><h1>CertificateTypeController.java</h1><pre class="source lang-java linenums">package com.newland.ucms.certificate.controller;
+
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.newland.ucms.certificate.dto.CertificateTypeDTO;
+import com.newland.ucms.certificate.service.CertificateTypeService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+/**
+ * 证件类型控制器
+ *
+ * @author UCMS Team
+ * @since 2026-01-27
+ */
+@RestController
+@RequestMapping(&quot;/api/certificate-type&quot;)
+<span class="fc" id="L20">public class CertificateTypeController {</span>
+
+  @Autowired
+  private CertificateTypeService certificateTypeService;
+
+  /**
+   * 分页查询证件类型列表
+   *
+   * @param page    页码
+   * @param pageSize 每页大小
+   * @param params   查询参数
+   * @return 分页结果
+   */
+  @GetMapping
+  public ResponseEntity&lt;IPage&lt;CertificateTypeDTO&gt;&gt; getCertificateTypeList(
+      @RequestParam(defaultValue = &quot;1&quot;) int page,
+      @RequestParam(defaultValue = &quot;10&quot;) int pageSize,
+      @RequestParam(required = false) Map&lt;String, Object&gt; params) {
+<span class="nc" id="L38">    IPage&lt;CertificateTypeDTO&gt; result = certificateTypeService.getCertificateTypeList(page, pageSize, params);</span>
+<span class="nc" id="L39">    return ResponseEntity.ok(result);</span>
+  }
+
+  /**
+   * 获取证件类型详情
+   *
+   * @param id 证件类型ID
+   * @return 证件类型详情
+   */
+  @GetMapping(&quot;/{id}&quot;)
+  public ResponseEntity&lt;CertificateTypeDTO&gt; getCertificateTypeDetail(@PathVariable Long id) {
+<span class="nc" id="L50">    CertificateTypeDTO result = certificateTypeService.getCertificateTypeDetail(id);</span>
+<span class="nc" id="L51">    return ResponseEntity.ok(result);</span>
+  }
+
+  /**
+   * 创建证件类型
+   *
+   * @param certificateTypeDTO 证件类型信息
+   * @return 创建后的证件类型信息
+   */
+  @PostMapping
+  public ResponseEntity&lt;CertificateTypeDTO&gt; createCertificateType(
+      @RequestBody CertificateTypeDTO certificateTypeDTO) {
+<span class="nc" id="L63">    CertificateTypeDTO result = certificateTypeService.createCertificateType(certificateTypeDTO);</span>
+<span class="nc" id="L64">    return ResponseEntity.ok(result);</span>
+  }
+
+  /**
+   * 更新证件类型
+   *
+   * @param id                    证件类型ID
+   * @param certificateTypeDTO 证件类型信息
+   * @return 更新后的证件类型信息
+   */
+  @PutMapping(&quot;/{id}&quot;)
+  public ResponseEntity&lt;CertificateTypeDTO&gt; updateCertificateType(
+      @PathVariable Long id,
+      @RequestBody CertificateTypeDTO certificateTypeDTO) {
+<span class="nc" id="L78">    CertificateTypeDTO result = certificateTypeService.updateCertificateType(id, certificateTypeDTO);</span>
+<span class="nc" id="L79">    return ResponseEntity.ok(result);</span>
+  }
+
+  /**
+   * 删除证件类型
+   *
+   * @param id 证件类型ID
+   */
+  @DeleteMapping(&quot;/{id}&quot;)
+  public ResponseEntity&lt;Void&gt; deleteCertificateType(@PathVariable Long id) {
+<span class="nc" id="L89">    certificateTypeService.deleteCertificateType(id);</span>
+<span class="nc" id="L90">    return ResponseEntity.ok().build();</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

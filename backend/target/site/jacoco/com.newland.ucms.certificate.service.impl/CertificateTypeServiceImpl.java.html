@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CertificateTypeServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">UCMS Certificate Management</a> &gt; <a href="index.source.html" class="el_package">com.newland.ucms.certificate.service.impl</a> &gt; <span class="el_source">CertificateTypeServiceImpl.java</span></div><h1>CertificateTypeServiceImpl.java</h1><pre class="source lang-java linenums">package com.newland.ucms.certificate.service.impl;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.newland.ucms.certificate.dto.CertificateTypeDTO;
+import com.newland.ucms.certificate.dto.CertificateTypeFieldDTO;
+import com.newland.ucms.certificate.entity.CertificateType;
+import com.newland.ucms.certificate.entity.CertificateTypeField;
+import com.newland.ucms.certificate.entity.FieldLibrary;
+import com.newland.ucms.certificate.enums.StatusEnum;
+import com.newland.ucms.certificate.mapper.CertificateTypeFieldMapper;
+import com.newland.ucms.certificate.mapper.CertificateTypeMapper;
+import com.newland.ucms.certificate.mapper.FieldLibraryMapper;
+import com.newland.ucms.certificate.service.CertificateTypeService;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+/**
+ * 证件类型服务实现类
+ *
+ * @author UCMS Team
+ * @since 2026-01-27
+ */
+@Service
+<span class="fc" id="L35">public class CertificateTypeServiceImpl extends ServiceImpl&lt;CertificateTypeMapper, CertificateType&gt;</span>
+    implements CertificateTypeService {
+
+  @Autowired
+  private CertificateTypeFieldMapper certificateTypeFieldMapper;
+
+  @Autowired
+  private FieldLibraryMapper fieldLibraryMapper;
+
+  @Override
+  public IPage&lt;CertificateTypeDTO&gt; getCertificateTypeList(int page, int pageSize, Map&lt;String, Object&gt; params) {
+<span class="nc" id="L46">    Page&lt;CertificateType&gt; pageParam = new Page&lt;&gt;(page, pageSize);</span>
+
+<span class="nc" id="L48">    LambdaQueryWrapper&lt;CertificateType&gt; queryWrapper = new LambdaQueryWrapper&lt;&gt;();</span>
+<span class="nc" id="L49">    queryWrapper.eq(CertificateType::getIsDeleted, 0);</span>
+
+    // 证件类型名称模糊查询
+<span class="nc bnc" id="L52" title="All 4 branches missed.">    if (params.containsKey(&quot;certTypeName&quot;) &amp;&amp; StringUtils.hasText(params.get(&quot;certTypeName&quot;).toString())) {</span>
+<span class="nc" id="L53">      queryWrapper.like(CertificateType::getCertTypeName, params.get(&quot;certTypeName&quot;).toString());</span>
+    }
+
+    // 状态查询
+<span class="nc bnc" id="L57" title="All 4 branches missed.">    if (params.containsKey(&quot;status&quot;) &amp;&amp; params.get(&quot;status&quot;) != null) {</span>
+<span class="nc" id="L58">      queryWrapper.eq(CertificateType::getStatus, Integer.parseInt(params.get(&quot;status&quot;).toString()));</span>
+    }
+
+    // 创建人模糊查询
+<span class="nc bnc" id="L62" title="All 4 branches missed.">    if (params.containsKey(&quot;createdBy&quot;) &amp;&amp; StringUtils.hasText(params.get(&quot;createdBy&quot;).toString())) {</span>
+<span class="nc" id="L63">      queryWrapper.like(CertificateType::getCreatedBy, params.get(&quot;createdBy&quot;).toString());</span>
+    }
+
+    // 按创建时间倒序
+<span class="nc" id="L67">    queryWrapper.orderByDesc(CertificateType::getCreatedAt);</span>
+
+<span class="nc" id="L69">    IPage&lt;CertificateType&gt; pageResult = baseMapper.selectPage(pageParam, queryWrapper);</span>
+
+    // 转换为DTO并填充字段信息
+<span class="nc" id="L72">    Page&lt;CertificateTypeDTO&gt; dtoPage = new Page&lt;&gt;(page, pageSize);</span>
+<span class="nc" id="L73">    dtoPage.setTotal(pageResult.getTotal());</span>
+<span class="nc" id="L74">    dtoPage.setRecords(pageResult.getRecords().stream()</span>
+<span class="nc" id="L75">        .map(this::toDTOWithFields)</span>
+<span class="nc" id="L76">        .collect(Collectors.toList()));</span>
+
+<span class="nc" id="L78">    return dtoPage;</span>
+  }
+
+  @Override
+  public CertificateTypeDTO getCertificateTypeDetail(Long id) {
+<span class="nc" id="L83">    CertificateType certificateType = baseMapper.selectById(id);</span>
+<span class="nc bnc" id="L84" title="All 4 branches missed.">    if (certificateType == null || certificateType.getIsDeleted() == 1) {</span>
+<span class="nc" id="L85">      throw new IllegalArgumentException(&quot;证件类型不存在&quot;);</span>
+    }
+<span class="nc" id="L87">    return toDTOWithFields(certificateType);</span>
+  }
+
+  @Override
+  @Transactional(rollbackFor = Exception.class)
+  public CertificateTypeDTO createCertificateType(CertificateTypeDTO certificateTypeDTO) {
+    // 验证证件类型代码是否已存在
+<span class="nc" id="L94">    LambdaQueryWrapper&lt;CertificateType&gt; queryWrapper = new LambdaQueryWrapper&lt;&gt;();</span>
+<span class="nc" id="L95">    queryWrapper.eq(CertificateType::getCertTypeCode, certificateTypeDTO.getCertTypeCode());</span>
+<span class="nc" id="L96">    queryWrapper.eq(CertificateType::getIsDeleted, 0);</span>
+<span class="nc" id="L97">    CertificateType existing = baseMapper.selectOne(queryWrapper);</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">    if (existing != null) {</span>
+<span class="nc" id="L99">      throw new IllegalArgumentException(&quot;证件类型代码已存在&quot;);</span>
+    }
+
+    // 验证字段配置
+<span class="nc bnc" id="L103" title="All 4 branches missed.">    if (certificateTypeDTO.getFields() == null || certificateTypeDTO.getFields().isEmpty()) {</span>
+<span class="nc" id="L104">      throw new IllegalArgumentException(&quot;请至少配置一个字段&quot;);</span>
+    }
+
+    // 创建证件类型
+<span class="nc" id="L108">    CertificateType certificateType = new CertificateType();</span>
+<span class="nc" id="L109">    BeanUtils.copyProperties(certificateTypeDTO, certificateType, &quot;id&quot;, &quot;fields&quot;);</span>
+<span class="nc" id="L110">    certificateType.setStatus(StatusEnum.ENABLED.getCode());</span>
+<span class="nc" id="L111">    certificateType.setIsDeleted(0);</span>
+
+<span class="nc" id="L113">    baseMapper.insert(certificateType);</span>
+
+    // 创建字段配置
+<span class="nc bnc" id="L116" title="All 4 branches missed.">    if (certificateTypeDTO.getFields() != null &amp;&amp; !certificateTypeDTO.getFields().isEmpty()) {</span>
+<span class="nc" id="L117">      createCertificateTypeFields(certificateType.getId(), certificateTypeDTO.getCertTypeCode(),</span>
+<span class="nc" id="L118">          certificateTypeDTO.getFields());</span>
+    }
+
+<span class="nc" id="L121">    return getCertificateTypeDetail(certificateType.getId());</span>
+  }
+
+  @Override
+  @Transactional(rollbackFor = Exception.class)
+  public CertificateTypeDTO updateCertificateType(Long id, CertificateTypeDTO certificateTypeDTO) {
+<span class="nc" id="L127">    CertificateType certificateType = baseMapper.selectById(id);</span>
+<span class="nc bnc" id="L128" title="All 4 branches missed.">    if (certificateType == null || certificateType.getIsDeleted() == 1) {</span>
+<span class="nc" id="L129">      throw new IllegalArgumentException(&quot;证件类型不存在&quot;);</span>
+    }
+
+    // 更新证件类型
+<span class="nc" id="L133">    BeanUtils.copyProperties(certificateTypeDTO, certificateType, &quot;id&quot;, &quot;fields&quot;);</span>
+<span class="nc" id="L134">    baseMapper.updateById(certificateType);</span>
+
+    // 删除原有字段配置
+<span class="nc" id="L137">    LambdaQueryWrapper&lt;CertificateTypeField&gt; deleteWrapper = new LambdaQueryWrapper&lt;&gt;();</span>
+<span class="nc" id="L138">    deleteWrapper.eq(CertificateTypeField::getCertTypeCode, certificateType.getCertTypeCode());</span>
+<span class="nc" id="L139">    certificateTypeFieldMapper.delete(deleteWrapper);</span>
+
+    // 创建新的字段配置
+<span class="nc bnc" id="L142" title="All 4 branches missed.">    if (certificateTypeDTO.getFields() != null &amp;&amp; !certificateTypeDTO.getFields().isEmpty()) {</span>
+<span class="nc" id="L143">      createCertificateTypeFields(id, certificateType.getCertTypeCode(), certificateTypeDTO.getFields());</span>
+    }
+
+<span class="nc" id="L146">    return getCertificateTypeDetail(id);</span>
+  }
+
+  @Override
+  @Transactional(rollbackFor = Exception.class)
+  public void deleteCertificateType(Long id) {
+<span class="nc" id="L152">    CertificateType certificateType = baseMapper.selectById(id);</span>
+<span class="nc bnc" id="L153" title="All 4 branches missed.">    if (certificateType == null || certificateType.getIsDeleted() == 1) {</span>
+<span class="nc" id="L154">      throw new IllegalArgumentException(&quot;证件类型不存在&quot;);</span>
+    }
+
+    // 逻辑删除证件类型
+<span class="nc" id="L158">    certificateType.setIsDeleted(1);</span>
+<span class="nc" id="L159">    baseMapper.updateById(certificateType);</span>
+
+    // 逻辑删除字段配置
+<span class="nc" id="L162">    LambdaQueryWrapper&lt;CertificateTypeField&gt; deleteWrapper = new LambdaQueryWrapper&lt;&gt;();</span>
+<span class="nc" id="L163">    deleteWrapper.eq(CertificateTypeField::getCertTypeCode, certificateType.getCertTypeCode());</span>
+<span class="nc" id="L164">    List&lt;CertificateTypeField&gt; fields = certificateTypeFieldMapper.selectList(deleteWrapper);</span>
+<span class="nc" id="L165">    fields.forEach(field -&gt; {</span>
+<span class="nc" id="L166">      field.setIsDeleted(1);</span>
+<span class="nc" id="L167">      certificateTypeFieldMapper.updateById(field);</span>
+<span class="nc" id="L168">    });</span>
+<span class="nc" id="L169">  }</span>
+
+  @Override
+  public CertificateTypeDTO toDTO(CertificateType certificateType) {
+<span class="nc bnc" id="L173" title="All 2 branches missed.">    if (certificateType == null) {</span>
+<span class="nc" id="L174">      return null;</span>
+    }
+
+<span class="nc" id="L177">    CertificateTypeDTO dto = new CertificateTypeDTO();</span>
+<span class="nc" id="L178">    BeanUtils.copyProperties(certificateType, dto);</span>
+<span class="nc" id="L179">    return dto;</span>
+  }
+
+  /**
+   * 实体转DTO并填充字段信息
+   *
+   * @param certificateType 实体
+   * @return DTO
+   */
+  private CertificateTypeDTO toDTOWithFields(CertificateType certificateType) {
+<span class="nc" id="L189">    CertificateTypeDTO dto = toDTO(certificateType);</span>
+
+    // 查询字段配置
+<span class="nc" id="L192">    LambdaQueryWrapper&lt;CertificateTypeField&gt; fieldWrapper = new LambdaQueryWrapper&lt;&gt;();</span>
+<span class="nc" id="L193">    fieldWrapper.eq(CertificateTypeField::getCertTypeCode, certificateType.getCertTypeCode());</span>
+<span class="nc" id="L194">    fieldWrapper.eq(CertificateTypeField::getIsDeleted, 0);</span>
+<span class="nc" id="L195">    fieldWrapper.orderByAsc(CertificateTypeField::getSortOrder);</span>
+<span class="nc" id="L196">    List&lt;CertificateTypeField&gt; fields = certificateTypeFieldMapper.selectList(fieldWrapper);</span>
+
+    // 转换为DTO
+<span class="nc" id="L199">    List&lt;CertificateTypeFieldDTO&gt; fieldDTOs = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">    for (CertificateTypeField field : fields) {</span>
+<span class="nc" id="L201">      CertificateTypeFieldDTO fieldDTO = new CertificateTypeFieldDTO();</span>
+<span class="nc" id="L202">      fieldDTO.setId(field.getId());</span>
+<span class="nc" id="L203">      fieldDTO.setFieldId(field.getFieldId());</span>
+<span class="nc" id="L204">      fieldDTO.setFieldNameCn(field.getFieldNameCn());</span>
+<span class="nc" id="L205">      fieldDTO.setFieldNameEn(field.getFieldNameEn());</span>
+<span class="nc" id="L206">      fieldDTO.setIsRequired(field.getIsRequired());</span>
+<span class="nc" id="L207">      fieldDTO.setSortOrder(field.getSortOrder());</span>
+
+      // 查询字段类型和数据类型
+<span class="nc" id="L210">      FieldLibrary fieldLibrary = fieldLibraryMapper.selectById(field.getFieldId());</span>
+<span class="nc bnc" id="L211" title="All 2 branches missed.">      if (fieldLibrary != null) {</span>
+<span class="nc" id="L212">        fieldDTO.setFieldType(fieldLibrary.getFieldType());</span>
+<span class="nc" id="L213">        fieldDTO.setFieldDataType(fieldLibrary.getFieldDataType());</span>
+<span class="nc" id="L214">        fieldDTO.setFieldLength(fieldLibrary.getFieldLength());</span>
+      }
+
+<span class="nc" id="L217">      fieldDTOs.add(fieldDTO);</span>
+<span class="nc" id="L218">    }</span>
+
+<span class="nc" id="L220">    dto.setFields(fieldDTOs);</span>
+<span class="nc" id="L221">    return dto;</span>
+  }
+
+  /**
+   * 创建证件类型字段配置
+   *
+   * @param certTypeId     证件类型ID
+   * @param certTypeCode   证件类型代码
+   * @param fields         字段配置列表
+   */
+  private void createCertificateTypeFields(Long certTypeId, String certTypeCode,
+      List&lt;CertificateTypeFieldDTO&gt; fields) {
+<span class="nc bnc" id="L233" title="All 2 branches missed.">    for (CertificateTypeFieldDTO fieldDTO : fields) {</span>
+      // 如果是自定义字段，先创建字段库记录
+<span class="nc bnc" id="L235" title="All 4 branches missed.">      if (&quot;CUSTOM&quot;.equals(fieldDTO.getFieldType()) &amp;&amp; fieldDTO.getFieldId() == null) {</span>
+        // 创建自定义字段逻辑（这里简化处理）
+        // 实际应该在创建证件类型前先创建自定义字段
+      }
+
+<span class="nc" id="L240">      CertificateTypeField field = new CertificateTypeField();</span>
+<span class="nc" id="L241">      field.setCertTypeCode(certTypeCode);</span>
+<span class="nc" id="L242">      field.setFieldId(fieldDTO.getFieldId());</span>
+<span class="nc" id="L243">      field.setFieldNameEn(fieldDTO.getFieldNameEn());</span>
+<span class="nc" id="L244">      field.setFieldNameCn(fieldDTO.getFieldNameCn());</span>
+<span class="nc" id="L245">      field.setIsRequired(fieldDTO.getIsRequired());</span>
+<span class="nc" id="L246">      field.setSortOrder(fieldDTO.getSortOrder());</span>
+<span class="nc" id="L247">      field.setIsDeleted(0);</span>
+
+<span class="nc" id="L249">      certificateTypeFieldMapper.insert(field);</span>
+<span class="nc" id="L250">    }</span>
+<span class="nc" id="L251">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
