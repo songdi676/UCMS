@@ -1,0 +1,79 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ucms-certificate
+
+  # 数据源配置
+  datasource:
+    # 开发环境使用H2内存数据库
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  # H2控制台配置（仅开发环境）
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  # Spring Cache配置
+  cache:
+    type: simple
+
+  # Jackson配置
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+    serialization:
+      write-dates-as-timestamps: false
+
+# MyBatis Plus配置
+mybatis-plus:
+  configuration:
+    # 日志实现
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 驼峰转下划线
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      # 表名前缀
+      table-prefix: UCMS_
+      # 逻辑删除字段
+      logic-delete-field: isDeleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  # Mapper XML文件位置
+  mapper-locations: classpath:mapper/*.xml
+  # 实体类包路径
+  type-aliases-package: com.newland.ucms.certificate.entity
+
+# 外部API配置
+external-api:
+  # 办理通路API地址
+  business-channel-url: http://example.com/api/business-channels
+  # 渠道小类API地址
+  channel-sub-type-url: http://example.com/api/channel-sub-types
+  # 地市API地址
+  city-url: http://example.com/api/cities
+  # 区县API地址
+  district-url: http://example.com/api/districts
+  # 机构API地址
+  institution-url: http://example.com/api/institutions
+  # 缓存过期时间（分钟）
+  cache-ttl-minutes: 30
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.newland.ucms.certificate: DEBUG
+    com.baomidou.mybatisplus: DEBUG
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n'
+
+# API Key配置
+api:
+  key: test-api-key
