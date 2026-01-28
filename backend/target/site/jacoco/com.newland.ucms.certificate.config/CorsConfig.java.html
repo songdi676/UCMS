@@ -17,30 +17,30 @@ import org.springframework.web.filter.CorsFilter;
 
   @Bean
   public CorsFilter corsFilter() {
-<span class="fc" id="L20">    CorsConfiguration config = new CorsConfiguration();</span>
+<span class="nc" id="L20">    CorsConfiguration config = new CorsConfiguration();</span>
 
     // 允许所有域名进行跨域调用
-<span class="fc" id="L23">    config.addAllowedOriginPattern(&quot;*&quot;);</span>
+<span class="nc" id="L23">    config.addAllowedOriginPattern(&quot;*&quot;);</span>
 
     // 允许所有请求头
-<span class="fc" id="L26">    config.addAllowedHeader(&quot;*&quot;);</span>
+<span class="nc" id="L26">    config.addAllowedHeader(&quot;*&quot;);</span>
 
     // 允许所有请求方法（GET、POST、PUT、DELETE等）
-<span class="fc" id="L29">    config.addAllowedMethod(&quot;*&quot;);</span>
+<span class="nc" id="L29">    config.addAllowedMethod(&quot;*&quot;);</span>
 
     // 允许携带凭证（cookies）
-<span class="fc" id="L32">    config.setAllowCredentials(true);</span>
+<span class="nc" id="L32">    config.setAllowCredentials(true);</span>
 
     // 暴露响应头
-<span class="fc" id="L35">    config.addExposedHeader(&quot;*&quot;);</span>
+<span class="nc" id="L35">    config.addExposedHeader(&quot;*&quot;);</span>
 
     // 预检请求的有效期，单位秒
-<span class="fc" id="L38">    config.setMaxAge(3600L);</span>
+<span class="nc" id="L38">    config.setMaxAge(3600L);</span>
 
-<span class="fc" id="L40">    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();</span>
-<span class="fc" id="L41">    source.registerCorsConfiguration(&quot;/**&quot;, config);</span>
+<span class="nc" id="L40">    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();</span>
+<span class="nc" id="L41">    source.registerCorsConfiguration(&quot;/**&quot;, config);</span>
 
-<span class="fc" id="L43">    return new CorsFilter(source);</span>
+<span class="nc" id="L43">    return new CorsFilter(source);</span>
   }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
