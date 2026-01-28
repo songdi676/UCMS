@@ -1,102 +1,48 @@
 <template>
   <div class="certificate-type-container">
     <el-card>
-      <!-- 查询表单 -->
-      <el-form :inline="true" :model="queryForm" class="query-form">
-        <el-form-item label="证件类型">
-          <el-input v-model="queryForm.certTypeName" placeholder="请输入证件类型" clearable />
-        </el-form-item>
-        <el-form-item label="证件字段">
-          <el-input v-model="queryForm.fieldName" placeholder="请输入证件字段" clearable />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="queryForm.status" placeholder="请选择" clearable>
-            <el-option label="全部" :value="null" />
-            <el-option label="启用" :value="1" />
-            <el-option label="停用" :value="0" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="创建人">
-          <el-input v-model="queryForm.createdBy" placeholder="请输入创建人" clearable />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleQuery">查询</el-button>
-          <el-button @click="handleReset">重置</el-button>
-          <el-button type="success" @click="handleAdd">新增</el-button>
-        </el-form-item>
-      </el-form>
+       <!-- 查询表单 -->
+       <el-form :inline="true" :model="queryForm" class="query-form">
+         <el-form-item label="证件类型">
+           <el-input v-model="queryForm.certTypeName" placeholder="请输入证件类型" clearable />
+         </el-form-item>
+         <el-form-item label="证件字段">
+           <el-input v-model="queryForm.fieldName" placeholder="请输入证件字段" clearable />
+         </el-form-item>
+         <el-form-item label="状态">
+           <el-select v-model="queryForm.status" placeholder="请选择" clearable>
+             <el-option label="全部" :value="null" />
+             <el-option label="启用" :value="1" />
+             <el-option label="停用" :value="0" />
+           </el-select>
+         </el-form-item>
+         <el-form-item label="创建人">
+           <el-input v-model="queryForm.createdBy" placeholder="请输入创建人" clearable />
+         </el-form-item>
+         <el-form-item>
+           <el-button type="primary" @click="handleQuery">查询</el-button>
+           <el-button @click="handleReset">重置</el-button>
+           <el-button type="success" @click="handleAdd">新增</el-button>
+         </el-form-item>
+       </el-form>
 
-      <!-- 数据表格 -->
-      <el-table :data="tableData" border style="width: 100%">
-        <el-table-column prop="certTypeName" label="证件类型" width="150" />
-        <el-table-column prop="certTypeCode" label="证件编号" width="100" />
-        <el-table-column label="必填字段" width="200">
-          <template #default="{ row }">
-            <el-tag
-              v-for="field in getRequiredFields(row)"
-              :key="field.id"
-              size="small"
-              style="margin-right: 5px; margin-bottom: 3px;"
-            >
-              {{ field.fieldNameCn }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="选填字段" width="200">
-          <template #default="{ row }">
-            <el-tag
-              v-for="field in getOptionalFields(row)"
-              :key="field.id"
-              type="info"
-              size="small"
-              style="margin-right: 5px; margin-bottom: 3px;"
-            >
-              {{ field.fieldNameCn }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="状态" width="80">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'info'">
-              {{ row.status === 1 ? '启用' : '停用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createdBy" label="创建人" width="100" />
-        <el-table-column prop="createdAt" label="创建时间" width="180" />
-        <el-table-column prop="updatedBy" label="修改人" width="100" />
-        <el-table-column prop="updatedAt" label="修改时间" width="180" />
-        <el-table-column label="操作" width="120" fixed="right">
-          <template #default="{ row }">
-            <el-button
-              type="primary"
-              :icon="Edit"
-              circle
-              size="small"
-              @click="handleEdit(row)"
-            />
-            <el-button
-              type="danger"
-              :icon="Delete"
-              circle
-              size="small"
-              @click="handleDelete(row)"
-            />
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <!-- 分页 -->
-      <el-pagination
-        v-model:current-page="pagination.page"
-        v-model:page-size="pagination.pageSize"
-        :total="pagination.total"
-        :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-        style="margin-top: 20px; justify-content: flex-end;"
-      />
+       <!-- 数据表格 -->
+       <el-table
+         :data="tableData"
+         border
+         style="width: 100%"
+         :page-size="pagination.pageSize"
+         :current-page="pagination.page"
+         v-model:current-page="pagination.page"
+         :total="pagination.total"
+         layout="total, sizes, prev, pager, next, jumper"
+         :page-sizes="[10, 20, 50, 100]"
+         @size-change="handleSizeChange"
+         @current-change="handleCurrentChange"
+       >
+         <template #empty>
+           <el-empty description="暂无数据" />
+         </template>
     </el-card>
 
     <!-- 新增/编辑对话框 -->
