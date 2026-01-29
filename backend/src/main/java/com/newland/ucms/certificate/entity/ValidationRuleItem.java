@@ -65,4 +65,28 @@ public class ValidationRuleItem {
    */
   @TableField("is_deleted")
   private Integer isDeleted;
+
+  /**
+   * 规则来源：0-自定义规则, 1-预定义规则
+   */
+  @TableField("rule_source")
+  private Integer ruleSource;
+
+  /**
+   * 预定义规则ID（外键UCMS_PREDEFINED_RULE.id）
+   */
+  @TableField("predefined_rule_id")
+  private Long predefinedRuleId;
+
+  /**
+   * 错误提示信息
+   */
+  @TableField("error_message")
+  private String errorMessage;
+
+  /**
+   * 证件类型字段ID（外键UCMS_CERTIFICATE_TYPE_FIELD.id）
+   */
+  @TableField("certificate_type_field_id")
+  private Long certificateTypeFieldId;
 }

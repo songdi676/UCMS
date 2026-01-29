@@ -55,6 +55,14 @@ public class CertificateTypeField {
   private Integer isRequired;
 
   /**
+   * 字段范围：共有、私有
+   * 共有：所有证件类型共用该字段的规则(如姓名、性别)
+   * 私有：每个证件类型有独立的字段规则(如证件号码)
+   */
+  @TableField("scope")
+  private String scope;
+
+  /**
    * 更新人
    */
   @TableField("updated_by")
