@@ -22,6 +22,12 @@ const routes = [
     name: 'ValidationRule',
     component: () => import('@/views/ValidationRule.vue'),
     meta: { title: '校验规则配置' }
+  },
+  {
+    path: '/predefined-rules',
+    name: 'PredefinedRule',
+    component: () => import('@/views/PredefinedRule.vue'),
+    meta: { title: '预置规则配置' }
   }
 ]
 
