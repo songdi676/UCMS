@@ -26,7 +26,7 @@ public enum StatusEnum {
   /**
    * 状态码
    */
-  private final Integer code;
+  private final int code;
 
   /**
    * 状态描述

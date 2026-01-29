@@ -54,7 +54,88 @@ public class ValidationServiceImpl implements ValidationService {
   private ValidationRuleItemMapper validationRuleItemMapper;
 
   @Autowired
+  private com.newland.ucms.certificate.mapper.PredefinedRuleMapper predefinedRuleMapper;
+
+  @Autowired
   private com.newland.ucms.certificate.mapper.FieldLibraryMapper fieldLibraryMapper;
+
+  @Override
+  public java.util.List<CertificateTypeField> getDeduplicatedFields(java.util.List<String> certTypeCodes) {
+    if (certTypeCodes == null || certTypeCodes.isEmpty()) {
+      return java.util.Collections.emptyList();
+    }
+
+    java.util.List<CertificateTypeField> allFields = new java.util.ArrayList<>();
+    for (String certTypeCode : certTypeCodes) {
+      java.util.List<CertificateTypeField> fields = certificateTypeFieldMapper.selectList(
+          new QueryWrapper<CertificateTypeField>()
+              .eq("cert_type_code", certTypeCode)
+              .eq("is_deleted", 0)
+              .orderByAsc("sort_order")
+      );
+      allFields.addAll(fields);
+    }
+
+    java.util.List<CertificateTypeField> deduplicatedFields = new java.util.ArrayList<>();
+    java.util.Map<Long, CertificateTypeField> fieldMap = new java.util.LinkedHashMap<>();
+
+    for (CertificateTypeField field : allFields) {
+      Long fieldId = field.getFieldId();
+      if (fieldId == null) {
+        deduplicatedFields.add(field);
+        continue;
+      }
+
+      if ("共有".equals(field.getScope())) {
+        if (!fieldMap.containsKey(fieldId)) {
+          fieldMap.put(fieldId, field);
+          deduplicatedFields.add(field);
+        }
+      } else {
+        deduplicatedFields.add(field);
+      }
+    }
+
+    return deduplicatedFields;
+  }
+
+  @Override
+  public java.util.List<ValidationRuleItem> applyPredefinedRules(String certTypeCode, java.util.List<CertificateTypeField> fields) {
+    java.util.List<com.newland.ucms.certificate.entity.PredefinedRule> predefinedRules = predefinedRuleMapper.selectList(
+          new QueryWrapper<com.newland.ucms.certificate.entity.PredefinedRule>()
+              .eq("cert_type_code", certTypeCode)
+              .eq("status", 1)
+              .eq("is_deleted", 0)
+              .orderByAsc("id")
+    );
+
+    java.util.List<ValidationRuleItem> ruleItems = new java.util.ArrayList<>();
+    for (com.newland.ucms.certificate.entity.PredefinedRule predefinedRule : predefinedRules) {
+      ValidationRuleItem ruleItem = new ValidationRuleItem();
+      ruleItem.setFieldName(getFieldNameByFieldId(fields, predefinedRule.getFieldId()));
+      ruleItem.setValidationLogic(predefinedRule.getValidationLogic());
+      ruleItem.setValidationValue(predefinedRule.getValidationValue());
+      ruleItem.setErrorMessage(predefinedRule.getErrorMessage());
+      ruleItem.setRuleSource(1);
+      ruleItem.setPredefinedRuleId(predefinedRule.getId());
+      ruleItem.setIsDeleted(0);
+      ruleItems.add(ruleItem);
+    }
+
+    return ruleItems;
+  }
+
+  /**
+   * 根据field_id获取字段名称
+   */
+  private String getFieldNameByFieldId(java.util.List<CertificateTypeField> fields, Long fieldId) {
+    for (CertificateTypeField field : fields) {
+      if (field.getFieldId() != null && field.getFieldId().equals(fieldId)) {
+        return field.getFieldNameEn();
+      }
+    }
+    return null;
+  }
 
   @Override
   public CertificateValidationResponse validateCertificate(CertificateRequest request) {
