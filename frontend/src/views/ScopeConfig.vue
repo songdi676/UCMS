@@ -1,68 +1,100 @@
 <template>
   <div class="scope-config-container">
-    <el-card>
+    <el-card class="main-card">
+      <!-- 页面标题 -->
+      <template #header>
+        <div class="card-header">
+          <div class="header-left">
+            <el-icon :size="20" color="#3b82f6"><Setting /></el-icon>
+            <span class="header-title">应用范围配置</span>
+          </div>
+          <el-button type="primary" :icon="Plus" @click="handleAdd">新增配置</el-button>
+        </div>
+      </template>
+
       <!-- 查询表单 -->
       <el-form :inline="true" :model="queryForm" class="query-form">
         <el-form-item label="应用系统">
-          <el-select v-model="queryForm.businessChannel" placeholder="请选择" clearable>
+          <el-select v-model="queryForm.businessChannel" placeholder="请选择应用系统" clearable style="width: 180px;">
             <el-option label="全部" :value="null" />
-            <el-option label="移动云厅" value="mobile-cloud" />
-            <el-option label="网格通" value="grid" />
-            <el-option label="便利店" value="convenience-store" />
+            <el-option label="移动云厅" value="mobile-cloud">
+              <span>移动云厅</span>
+              <el-icon color="#3b82f6"><Monitor /></el-icon>
+            </el-option>
+            <el-option label="网格通" value="grid">
+              <span>网格通</span>
+              <el-icon color="#10b981"><Grid /></el-icon>
+            </el-option>
+            <el-option label="便利店" value="convenience-store">
+              <span>便利店</span>
+              <el-icon color="#f59e0b"><Shop /></el-icon>
+            </el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="渠道小类">
-          <el-input v-model="queryForm.channelSubType" placeholder="请输入渠道小类" clearable />
+          <el-input v-model="queryForm.channelSubType" placeholder="请输入渠道小类" clearable prefix-icon="Search" />
         </el-form-item>
         <el-form-item label="地市">
-          <el-select v-model="queryForm.city" placeholder="请选择" clearable>
+          <el-select v-model="queryForm.city" placeholder="请选择地市" clearable style="width: 150px;">
             <el-option label="全部" :value="null" />
-            <!-- 这里需要调用外部API获取地市列表 -->
+            <el-option
+              v-for="city in cities"
+              :key="city.code"
+              :label="city.name"
+              :value="city.code"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="区县">
-          <el-input v-model="queryForm.district" placeholder="请输入区县" clearable />
+          <el-input v-model="queryForm.district" placeholder="请输入区县" clearable prefix-icon="Location" />
         </el-form-item>
         <el-form-item label="机构">
-          <el-input v-model="queryForm.institution" placeholder="请输入机构" clearable />
+          <el-input v-model="queryForm.institution" placeholder="请输入机构" clearable prefix-icon="OfficeBuilding" />
         </el-form-item>
         <el-form-item label="证件类型">
-          <el-input v-model="queryForm.certTypeCode" placeholder="请输入证件类型代码" clearable />
+          <el-input v-model="queryForm.certTypeCode" placeholder="请输入证件类型代码" clearable prefix-icon="Document" />
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleQuery">查询</el-button>
-          <el-button @click="handleReset">重置</el-button>
-          <el-button type="success" @click="handleAdd">新增配置</el-button>
+        <el-form-item class="form-actions">
+          <el-button type="primary" :icon="Search" @click="handleQuery">查询</el-button>
+          <el-button :icon="RefreshLeft" @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
 
       <!-- 数据表格 -->
-      <el-table :data="tableData" border style="width: 100%">
-        <el-table-column prop="businessChannel" label="应用系统" width="120">
+      <el-table :data="tableData" border style="width: 100%" class="scope-table">
+        <el-table-column prop="businessChannel" label="应用系统" width="140">
           <template #default="{ row }">
-            {{ getBusinessChannelName(row.businessChannel) }}
+            <div class="channel-cell">
+              <el-icon :size="16" color="#3b82f6"><Monitor /></el-icon>
+              <span>{{ getBusinessChannelName(row.businessChannel) }}</span>
+            </div>
           </template>
         </el-table-column>
         <el-table-column prop="channelSubType" label="渠道小类" width="120" />
-        <el-table-column prop="city" label="地市" width="100" />
-        <el-table-column prop="district" label="区县" width="100" />
+        <el-table-column prop="city" label="地市" width="120" />
+        <el-table-column prop="district" label="区县" width="120" />
         <el-table-column prop="institution" label="机构" width="150" />
-        <el-table-column prop="allowedCertTypes" label="允许的证件类型" width="200">
+        <el-table-column prop="allowedCertTypes" label="证件类型" min-width="220">
           <template #default="{ row }">
-            <el-tag
-              v-for="certType in parseAllowedCertTypes(row.allowedCertTypes)"
-              :key="certType"
-              size="small"
-              style="margin-right: 5px;"
-            >
-              {{ getCertTypeName(certType) }}
-            </el-tag>
+            <div class="cert-tags">
+              <el-tag
+                v-for="certType in parseAllowedCertTypes(row.allowedCertTypes)"
+                :key="certType"
+                type="primary"
+                size="small"
+                effect="plain"
+              >
+                {{ getCertTypeName(certType) }}
+              </el-tag>
+            </div>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="80">
+        <el-table-column prop="status" label="状态" width="100" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'info'">
-              {{ row.status === 1 ? '启用' : '停用' }}
+            <el-tag :type="row.status === 1 ? 'success' : 'info'" effect="dark" size="large">
+              <el-icon v-if="row.status === 1"><CircleCheckFilled /></el-icon>
+              <el-icon v-else><CircleCloseFilled /></el-icon>
+              <span style="margin-left: 4px;">{{ row.status === 1 ? '启用' : '停用' }}</span>
             </el-tag>
           </template>
         </el-table-column>
@@ -70,22 +102,24 @@
         <el-table-column prop="createdAt" label="创建时间" width="180" />
         <el-table-column prop="updatedBy" label="修改人" width="100" />
         <el-table-column prop="updatedAt" label="修改时间" width="180" />
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button
               type="primary"
               :icon="Edit"
-              circle
               size="small"
               @click="handleEdit(row)"
-            />
+            >
+              编辑
+            </el-button>
             <el-button
               type="danger"
               :icon="Delete"
-              circle
               size="small"
               @click="handleDelete(row)"
-            />
+            >
+              删除
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -99,7 +133,6 @@
         layout="total, sizes, prev, pager, next, jumper"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
-        style="margin-top: 20px; justify-content: flex-end;"
       />
     </el-card>
 
@@ -109,55 +142,85 @@
       :title="dialogTitle"
       width="800px"
       @close="handleDialogClose"
+      class="form-dialog"
     >
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="120px">
-        <el-form-item label="应用系统">
-          <el-select v-model="form.businessChannel" placeholder="请选择应用系统">
-            <el-option label="移动云厅" value="mobile-cloud" />
-            <el-option label="网格通" value="grid" />
-            <el-option label="便利店" value="convenience-store" />
+      <el-form :model="form" :rules="rules" ref="formRef" label-width="140px">
+        <el-form-item label="应用系统" prop="businessChannel">
+          <el-select v-model="form.businessChannel" placeholder="请选择应用系统" size="large" style="width: 100%;">
+            <el-option label="移动云厅" value="mobile-cloud">
+              <span>移动云厅</span>
+              <el-icon color="#3b82f6"><Monitor /></el-icon>
+            </el-option>
+            <el-option label="网格通" value="grid">
+              <span>网格通</span>
+              <el-icon color="#10b981"><Grid /></el-icon>
+            </el-option>
+            <el-option label="便利店" value="convenience-store">
+              <span>便利店</span>
+              <el-icon color="#f59e0b"><Shop /></el-icon>
+            </el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="渠道小类">
-          <el-input v-model="form.channelSubType" placeholder="请输入渠道小类" />
+          <el-input v-model="form.channelSubType" placeholder="请输入渠道小类" size="large" />
         </el-form-item>
-        <el-form-item label="地市">
-          <el-select v-model="form.city" placeholder="请选择地市" filterable>
-            <el-option label="全部" :value="null" />
-            <el-option
-              v-for="city in cities"
-              :key="city.code"
-              :label="city.name"
-              :value="city.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="区县">
-          <el-input v-model="form.district" placeholder="请输入区县" />
-        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="地市">
+              <el-select v-model="form.city" placeholder="请选择地市" filterable size="large" style="width: 100%;">
+                <el-option label="全部" :value="null" />
+                <el-option
+                  v-for="city in cities"
+                  :key="city.code"
+                  :label="city.name"
+                  :value="city.code"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="区县">
+              <el-input v-model="form.district" placeholder="请输入区县" size="large" />
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-form-item label="机构">
-          <el-input v-model="form.institution" placeholder="请输入机构" />
+          <el-input v-model="form.institution" placeholder="请输入机构" size="large" />
         </el-form-item>
-        <el-form-item label="证件类型">
-          <el-select v-model="form.allowedCertTypes" placeholder="请选择证件类型" multiple>
+        <el-form-item label="证件类型" prop="allowedCertTypes">
+          <el-select v-model="form.allowedCertTypes" placeholder="请选择证件类型" multiple size="large" style="width: 100%;">
             <el-option
               v-for="certType in certificateTypes"
-              :key="certType.code"
-              :label="certType.name"
-              :value="certType.code"
-            />
+              :key="certType.certTypeCode"
+              :label="certType.certTypeName"
+              :value="certType.certTypeCode"
+            >
+              <span>{{ certType.certTypeName }}</span>
+              <el-icon style="margin-left: 8px;" color="#3b82f6"><Document /></el-icon>
+            </el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="状态">
-          <el-radio-group v-model="form.status">
-            <el-radio :label="1">启用</el-radio>
-            <el-radio :label="0">停用</el-radio>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="form.status" size="large">
+            <el-radio :label="1" border>
+              <el-icon color="#10b981"><CircleCheckFilled /></el-icon>
+              <span style="margin-left: 8px;">启用</span>
+            </el-radio>
+            <el-radio :label="0" border>
+              <el-icon color="#94a3b8"><CircleCloseFilled /></el-icon>
+              <span style="margin-left: 8px;">停用</span>
+            </el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">保存</el-button>
+        <div class="dialog-footer">
+          <el-button @click="dialogVisible = false" size="large">取消</el-button>
+          <el-button type="primary" @click="handleSubmit" size="large">
+            <el-icon><Check /></el-icon>
+            <span style="margin-left: 4px;">保存</span>
+          </el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -165,8 +228,18 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Edit, Delete } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import {
+  Plus, Edit, Delete, Search, RefreshLeft,
+  Monitor, Grid, Shop, CircleCheckFilled, CircleCloseFilled, Document, Check
+} from '@element-plus/icons-vue'
+import {
+  getScopeConfigList,
+  createScopeConfig,
+  updateScopeConfig,
+  deleteScopeConfig
+} from '@/api/scope-config'
+import { getCertificateTypeList } from '@/api/certificate-type'
 
 // 查询表单
 const queryForm = reactive({
@@ -207,21 +280,18 @@ const form = reactive({
 
 // 表单验证规则
 const rules = {
-  businessChannel: [{ required: true, message: '请选择应用系统', trigger: 'change' }]
+  businessChannel: [{ required: true, message: '请选择应用系统', trigger: 'change' }],
+  allowedCertTypes: [{ required: true, message: '请至少选择一个证件类型', trigger: 'change' }]
 }
 
-// 地市列表（暂时静态数据，后续需要调用外部API）
+// 地市列表
 const cities = ref([
   { code: '110000', name: '北京市' },
   { code: '120000', name: '天津市' }
 ])
 
-// 证件类型列表（暂时静态数据，后续需要调用后端API）
-const certificateTypes = ref([
-  { code: '1', name: '身份证' },
-  { code: '3', name: '护照' },
-  { code: '14', name: '武装警察身份证' }
-])
+// 证件类型列表
+const certificateTypes = ref([])
 
 // 应用系统名称映射
 const businessChannelMap = {
@@ -237,37 +307,38 @@ const getBusinessChannelName = (code) => {
 
 // 获取证件类型名称
 const getCertTypeName = (code) => {
-  const certType = certificateTypes.value.find(t => t.code === code)
-  return certType ? certType.name : code
+  const certType = certificateTypes.value.find(t => t.certTypeCode === code)
+  return certType ? certType.certTypeName : code
 }
 
 // 解析允许的证件类型
 const parseAllowedCertTypes = (typesStr) => {
   if (!typesStr) return []
-  return typesStr.split(',').map(t => t.trim())
+  return typesStr.split('|').map(t => t.trim())
 }
 
 // 加载数据
 const loadData = async () => {
   try {
-    // 暂时使用静态数据
-    tableData.value = [
-      {
-        id: 1,
-        businessChannel: 'mobile-cloud',
-        channelSubType: '云厅',
-        city: '110000',
-        district: '',
-        institution: '',
-        allowedCertTypes: '1,3',
-        status: 1,
-        createdBy: 'admin',
-        updatedBy: 'admin',
-        createdAt: '2026-01-27 10:00:00',
-        updatedAt: '2026-01-27 10:00:00'
-      }
-    ]
-    pagination.total = 1
+    // 并行加载证件类型列表
+    const [scopeRes, certTypeRes] = await Promise.all([
+      getScopeConfigList({
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        ...queryForm
+      }),
+      getCertificateTypeList({
+        page: 1,
+        pageSize: 1000
+      })
+    ])
+    
+    // 后端返回MyBatis-Plus的IPage结构: {records: [], total: 0, ...}
+    tableData.value = scopeRes.records || []
+    pagination.total = scopeRes.total || 0
+    
+    // 加载证件类型列表
+    certificateTypes.value = Array.isArray(certTypeRes.records) ? certTypeRes.records : []
   } catch (error) {
     ElMessage.error('加载数据失败')
   }
@@ -328,10 +399,17 @@ const handleEdit = (row) => {
 // 删除
 const handleDelete = (row) => {
   ElMessageBox.confirm('确定要删除该应用范围配置吗？', '提示', {
-    type: 'warning'
-  }).then(() => {
-    ElMessage.success('删除成功')
-    loadData()
+    type: 'warning',
+    confirmButtonText: '确定',
+    cancelButtonText: '取消'
+  }).then(async () => {
+    try {
+      await deleteScopeConfig(row.id)
+      ElMessage.success('删除成功')
+      loadData()
+    } catch (error) {
+      ElMessage.error('删除失败')
+    }
   }).catch(() => {})
 }
 
@@ -346,9 +424,26 @@ const handleSubmit = async () => {
 
   await formRef.value.validate(async (valid) => {
     if (valid) {
-      ElMessage.success('保存成功')
-      dialogVisible.value = false
-      loadData()
+      try {
+        // 将数组转换为竖线分隔的字符串（使用|分隔符）
+        const submitData = {
+          ...form,
+          allowedCertTypes: form.allowedCertTypes.join('|')
+        }
+
+        if (form.id) {
+          // 更新
+          await updateScopeConfig(form.id, submitData)
+        } else {
+          // 创建
+          await createScopeConfig(submitData)
+        }
+        ElMessage.success('保存成功')
+        dialogVisible.value = false
+        loadData()
+      } catch (error) {
+        ElMessage.error('操作失败')
+      }
     }
   })
 }
@@ -356,7 +451,6 @@ const handleSubmit = async () => {
 // 分页大小变化
 const handleSizeChange = (val) => {
   pagination.pageSize = val
-  pagination.page = 1
   loadData()
 }
 
@@ -374,10 +468,165 @@ onMounted(() => {
 
 <style scoped>
 .scope-config-container {
-  padding: 20px;
+  max-width: 1920px;
+  margin: 0 auto;
+}
+
+.main-card {
+  animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
 }
 
 .query-form {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.form-actions .el-form-item__content {
+  flex-wrap: nowrap;
+}
+
+.scope-table {
   margin-bottom: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.channel-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.cert-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cert-tags .el-tag {
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 6px;
+}
+
+.cert-tags .el-tag:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+:deep(.el-form-item__label) {
+  font-weight: 500;
+  color: #475569;
+}
+
+:deep(.el-form-item__content) {
+  border-radius: 8px;
+}
+
+:deep(.el-input__inner) {
+  border-radius: 8px;
+}
+
+:deep(.el-table) {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+:deep(.el-table th.el-table__cell) {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #475569;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+:deep(.el-table tr) {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:deep(.el-table--enable-row-hover .el-table__body tr:hover > td) {
+  background-color: #f1f5f9;
+}
+
+:deep(.el-tag--dark.el-tag--success) {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+}
+
+:deep(.el-radio.is-bordered) {
+  border-radius: 8px;
+  padding: 12px 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:deep(.el-radio.is-bordered:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+:deep(.el-dialog) {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+:deep(.el-dialog__header) {
+  padding: 24px 24px 16px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+:deep(.el-dialog__body) {
+  padding: 24px;
+}
+
+:deep(.el-dialog__footer) {
+  padding: 16px 24px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
 }
 </style>
